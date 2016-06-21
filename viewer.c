@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include "common.h"
+#include "raytrace.h"
 
 int main (int argc, char* argv[]){
     FILE* geometry_file = NULL;
@@ -32,6 +34,32 @@ int main (int argc, char* argv[]){
     
     fclose (geometry_file);
     free(buffer);
-    return 0;
-    }
+    //return 0;
+  struct db_i *dbip;
+  int counter = 0;
+  struct db_tree_state state = rt_initial_tree_state;
+
+  if (argc < 2) {
+    bu_exit(0, "need more, db.g obj\n");
+  }
+
+  dbip = db_open(argv[1], "r");
+  if (dbip == NULL) {
+    bu_exit(1, "Unable to open %s\n", argv[1]);
+  }
+
+  if (db_dirbuild(dbip) < 0) {
+    db_close(dbip);
+    bu_exit(1, "Unable to load %s\n", argv[1]);
+  }
+
+
+  printf ("DB_I structure contains: %d\n", dbip->dbi_magic);
+  return 0;    
+
+
+      }
+
+
+
 }
