@@ -3,8 +3,10 @@ A geometry viewer application that generates a standalone double-clickable file 
 
 ## Compilation Instructions:
 
+Adjust the installation locatino of your brlcad installation. This is for default and release 7.24.4.
+
 ```bash
-gcc -o viewer viewer.c
+gcc -o viewer viewer.c -L/usr/brlcad/rel-7.24.4/lib -lrt -lbu -I/usr/brlcad/rel-7.24.4/include -I/usr/brlcad/rel-7.24.4/include/brlcad
 ./viewer.c moss.g
 ```
 ## Development Plan Summary:
