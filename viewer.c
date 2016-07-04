@@ -3,6 +3,7 @@
 #include "raytrace.h"
 #include "unistd.h"
 
+
 size_t read_binary (char* g_file, unsigned char **buffer){
 
     FILE* geometry_file = NULL;
@@ -34,36 +35,38 @@ size_t read_binary (char* g_file, unsigned char **buffer){
                                                                                                    
 int main (int argc, char* argv[]){
     struct db_i *dbip;   
-    int i;
+    int i,j;
     size_t size;
     unsigned char *buffer;
     size = read_binary(argv[0], &buffer);
     int g_header_start = 0;
+
     if (size == 1 ){
 	bu_exit(1, "Unable to load g file\n");
     }
     else{
         for (i=0; i<size; i++){
-		if (buffer[i] == 76){
-			if ( i+7 < size){
-                           if (buffer [i+1]== 01 && buffer [i+2]== 00 && buffer [i+3]== 00 && buffer [i+4]== 00 && buffer [i+5]== 00 && buffer [i+6]== 01 && buffer [i+7]== 35){
+		if ( buffer[i] == 118){
 
-		g_header_start = i;
-//		db_open_inmem();
-//		dbip->dbi_mf->buf = &buffer[i]; 
-//		dbip->dbi_eof = size-i;
-		break;
-		}
+			if (i+7 < size ){
+				/* Comparing with decimal of  76 01 00 00 00 00 01 35 */
+				if (buffer[i+1] == 1 && buffer[i+2] == 0 && buffer[i+3] == 0 && buffer[i+4] == 0 && buffer[i+5] == 0 && buffer [i+6] == 1 && buffer[i+7] == 53){
+				g_header_start = i;
+				printf ("start of g header is %d\n",g_header_start);
+				/* Printing HEX of g file
+				for (j=i; j< size; j++){
+					printf("%02x", buffer[j]);
+				}*/
+				}
+
 			}
-		}
-                //printf("%02x", buffer[i]);
-            }
-	printf ("start of g header is %d",i);
-        printf ("\n") ;
+			//printf("%02x\n", buffer[i]);
+            	}
+ //       printf ("\n") ;
 //        free(buffer);
         //return 0;
     }
-
+}
 
 /*    if (argc < 2) {
       bu_exit(0, "need more, db.g obj\n");
