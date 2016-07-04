@@ -36,8 +36,36 @@ int main (int argc, char* argv[]){
     struct db_i *dbip;   
     int i;
     size_t size;
+    unsigned char *buffer;
+    size = read_binary(argv[0], &buffer);
+    int g_header_start = 0;
+    if (size == 1 ){
+	bu_exit(1, "Unable to load g file\n");
+    }
+    else{
+        for (i=0; i<size; i++){
+		if (buffer[i] == 76){
+			if ( i+7 < size){
+                           if (buffer [i+1]== 01 && buffer [i+2]== 00 && buffer [i+3]== 00 && buffer [i+4]== 00 && buffer [i+5]== 00 && buffer [i+6]== 01 && buffer [i+7]== 35){
 
-    if (argc < 2) {
+		g_header_start = i;
+//		db_open_inmem();
+//		dbip->dbi_mf->buf = &buffer[i]; 
+//		dbip->dbi_eof = size-i;
+		break;
+		}
+			}
+		}
+                //printf("%02x", buffer[i]);
+            }
+	printf ("start of g header is %d",i);
+        printf ("\n") ;
+//        free(buffer);
+        //return 0;
+    }
+
+
+/*    if (argc < 2) {
       bu_exit(0, "need more, db.g obj\n");
     }
     dbip = db_open(argv[1], "r");
@@ -46,29 +74,18 @@ int main (int argc, char* argv[]){
       bu_exit(1, "Unable to open %s\n", argv[1]);
     }
 
+*/
 /*    if (db_dirbuild(dbip) < 0) {
       db_close(dbip);
-      bu_exit(1, "Unable to load %s\n", argv[1]);
+      bu_exit(1, "Unable to load %s\n", argv[0]);
     }
-*/
+
     // Print struct dbip: http://brlcad.org/docs/doxygen-r64112/d2/d66/structdb__i.xhtml
 
-    bu_log ("DBIP Version %d\n", dbip->dbi_mf);
+    bu_log ("DBIP Version %d\n", dbip->dbi_version);
     db_close(dbip);
-
-/*  Read .g File into Binary                    */
-    unsigned char *buffer;
-    size = read_binary(argv[1], &buffer);
-    if (size == 1 ){
-        bu_exit(1, "Unable to load %s\n", argv[1]);
-    }
-    else{
-            for (i=0; i<size; i++){
-                 printf("%02x", buffer[i]);
-            }                         
-        printf ("\n") ;
-        free(buffer);
-        return 0;    
-    }
+*/
+    free(buffer);
+    return 0;
 }
 
