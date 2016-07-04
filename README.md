@@ -7,8 +7,8 @@ Adjust the command according to the location of your brlcad installation. This c
 
 ```bash
 gcc -o viewer viewer.c -L/usr/brlcad/rel-7.24.4/lib -lrt -lbu -I/usr/brlcad/rel-7.24.4/include -I/usr/brlcad/rel-7.24.4/include/brlcad
-
-./viewer.c moss.g
+cat viewer moss.g > exec
+./exec
 ```
 ## Development Plan Summary:
 
