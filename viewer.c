@@ -1,8 +1,8 @@
 #include <stdio.h>
-#include "common.h"
-#include "raytrace.h"
-#include "unistd.h"
-
+#include <common.h>
+#include <raytrace.h>
+#include <unistd.h>
+#include <string.h>
 
 size_t read_binary (char* g_file, unsigned char **buffer){
 
@@ -35,11 +35,13 @@ size_t read_binary (char* g_file, unsigned char **buffer){
                                                                                                    
 int main (int argc, char* argv[]){
     struct db_i *dbip;   
-    int i,j;
+    int i,j, g_file;
     size_t size;
     unsigned char *buffer;
+    unsigned char *g_bytes;
     size = read_binary(argv[0], &buffer);
-    int g_header_start = 0;
+    char template[] = "fileXXXXXX";
+   
 
     if (size == 1 ){
 	bu_exit(1, "Unable to load g file\n");
@@ -51,44 +53,41 @@ int main (int argc, char* argv[]){
 			if (i+7 < size ){
 				/* Comparing with decimal of  76 01 00 00 00 00 01 35 */
 				if (buffer[i+1] == 1 && buffer[i+2] == 0 && buffer[i+3] == 0 && buffer[i+4] == 0 && buffer[i+5] == 0 && buffer [i+6] == 1 && buffer[i+7] == 53){
-				g_header_start = i;
-				printf ("start of g header is %d\n",g_header_start);
-				/* Printing HEX of g file
-				for (j=i; j< size; j++){
-					printf("%02x", buffer[j]);
-				}*/
+				g_bytes = (unsigned char *) malloc(size-i);
+				memcpy(g_bytes, buffer + i, size-i);
+				free(buffer);
+				//db_open_inmem();
+				//dbip->dbi_mf->buf = * g_bytes;
+				//dbip->dbi_eof = size - i;
+				// Printing HEX of g file
+				g_file = mkstemp (template);
+				write (g_file, g_bytes,size-i);
+
+/*				for (j=0; j< size-i; j++){
+				 	printf("%02x", g_bytes[j]);
+				}
+*/
+				break;
 				}
 
 			}
 			//printf("%02x\n", buffer[i]);
             	}
- //       printf ("\n") ;
-//        free(buffer);
-        //return 0;
     }
 }
 
-/*    if (argc < 2) {
-      bu_exit(0, "need more, db.g obj\n");
-    }
-    dbip = db_open(argv[1], "r");
-
-    if (dbip == NULL) {
-      bu_exit(1, "Unable to open %s\n", argv[1]);
-    }
-
-*/
-/*    if (db_dirbuild(dbip) < 0) {
+    dbip = db_open(template, "r");
+    if (db_dirbuild(dbip) < 0) {
       db_close(dbip);
       bu_exit(1, "Unable to load %s\n", argv[0]);
     }
 
     // Print struct dbip: http://brlcad.org/docs/doxygen-r64112/d2/d66/structdb__i.xhtml
 
-    bu_log ("DBIP Version %d\n", dbip->dbi_version);
+    bu_log ("DBIP Version %s\n", dbip->dbi_title);
     db_close(dbip);
-*/
-    free(buffer);
+    free(g_bytes);
+    unlink(template);
     return 0;
 }
 
