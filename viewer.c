@@ -39,6 +39,44 @@ size_t read_binary (char* g_file, unsigned char **buffer){
         return size;
     }
 }
+
+
+size_t
+db_ls_test(const struct db_i *dbip, int flags, const char *pattern, struct directory ***dpv)
+{
+    size_t i;
+    size_t objcount = 0;
+    struct directory *dp;
+    char *obj;
+    RT_CK_DBI(dbip);
+    for (i = 0; i < RT_DBNHASH; i++) {
+        for (dp = dbip->dbi_Head[i]; dp != RT_DIR_NULL; dp = dp->d_forw) {
+            objcount += dp_eval_flags(dp, flags);
+	    obj = dp->d_namep;
+           // printf ("dp name is %s\n", obj);
+        }
+    }
+    if (objcount > 0) {
+        (*dpv) = (struct directory **)bu_malloc(sizeof(struct directory *) * (objcount + 1), "directory pointer array");
+        objcount = 0;
+        for (i = 0; i < RT_DBNHASH; i++) {
+            for (dp = dbip->dbi_Head[i]; dp != RT_DIR_NULL; dp = dp->d_forw) {
+                if (dp_eval_flags(dp,flags)) {
+                    if (!pattern || !bu_fnmatch(pattern, dp->d_namep, 0)) {
+                        (*dpv)[objcount] = dp;
+                        objcount++;
+			printf ("Object name is %s\n", dp->d_namep);
+                    }
+                }
+            }
+        }
+        (*dpv)[objcount] = NULL;
+    }
+    return objcount;
+}
+
+
+
                                                                                                    
 int main (int argc, char* argv[]){
     struct db_i *dbip;   
@@ -99,12 +137,20 @@ int main (int argc, char* argv[]){
     // Print struct dbip: http://brlcad.org/docs/doxygen-r64112/d2/d66/structdb__i.xhtml
 
     bu_log ("Database Title Is: %s\n", dbip->dbi_title);
-int obj_cnt=0;
-struct directory **all_paths;
-    obj_cnt = db_ls(dbip, DB_LS_TOPS, NULL, &all_paths);
+
+/*  Get list of top level objects     */
+    int obj_cnt=0;
+    struct directory **all_paths;
+    obj_cnt = db_ls_test(dbip, DB_LS_TOPS, NULL, &all_paths);
     printf ("obj count is %d\n", obj_cnt);
 
-// db_walk_tree
+
+
+
+
+
+
+/* Call db_walk_tree on each of the objects*/
   
   state.ts_dbip = dbip;
   state.ts_resp = &rt_uniresource;
