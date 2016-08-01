@@ -4,6 +4,13 @@
 #include <unistd.h>
 #include <string.h>
 
+int incr_region(struct db_tree_state *tsp, struct db_full_path *pathp, const struct rt_comb_internal *combp, void *data){
+  int *counter = (int*)data;
+  (*counter)++;
+  return 0;
+}
+
+
 size_t read_binary (char* g_file, unsigned char **buffer){
 
     FILE* geometry_file = NULL;
@@ -41,8 +48,9 @@ int main (int argc, char* argv[]){
     unsigned char *g_bytes;
     size = read_binary(argv[0], &buffer);
     char template[] = "fileXXXXXX";
-   
-
+    int counter = 0;
+    struct db_tree_state state = rt_initial_tree_state;  
+    const char* array[] = {"box.r"};
     if (size == 1 ){
 	bu_exit(1, "Unable to load g file\n");
     }
@@ -82,9 +90,31 @@ int main (int argc, char* argv[]){
       bu_exit(1, "Unable to load %s\n", argv[0]);
     }
 
+  if (db_lookup(dbip, *array, 1) == NULL) {
+    db_close(dbip);
+    bu_exit(1, "Unable to find %s\n", *array);
+  }
+
+
     // Print struct dbip: http://brlcad.org/docs/doxygen-r64112/d2/d66/structdb__i.xhtml
 
-    bu_log ("DBIP Version %s\n", dbip->dbi_title);
+    bu_log ("Database Title Is: %s\n", dbip->dbi_title);
+int obj_cnt=0;
+struct directory **all_paths;
+    obj_cnt = db_ls(dbip, DB_LS_TOPS, NULL, &all_paths);
+    printf ("obj count is %d\n", obj_cnt);
+
+// db_walk_tree
+  
+  state.ts_dbip = dbip;
+  state.ts_resp = &rt_uniresource;
+  rt_init_resource(&rt_uniresource, 0, NULL );
+
+
+  db_walk_tree(dbip, 1, (const char **)array, 1, &state, incr_region, NULL, NULL, &counter);
+
+  bu_log("counter is %d\n", counter);
+
     db_close(dbip);
     free(g_bytes);
     unlink(template);
