@@ -3,7 +3,7 @@
 
 
 int main(void) {
-  struct db_i *dbip = db_open("ktank.g", DB_OPEN_READONLY);
+  struct db_i *dbip = db_open("moss.g", DB_OPEN_READONLY);
   struct directory **tops;
   db_dirbuild(dbip);
   int count = db_ls(dbip, DB_LS_TOPS, NULL, &tops);
