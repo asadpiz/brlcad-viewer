@@ -3,12 +3,55 @@
 #include <raytrace.h>
 #include <unistd.h>
 #include <string.h>
-
+/*
 int incr_region(struct db_tree_state *tsp, struct db_full_path *pathp, const struct rt_comb_internal *combp, void *data){
   int *counter = (int*)data;
   (*counter)++;
   return 0;
 }
+
+*/
+
+/*
+size_t
+db_ls_test(const struct db_i *dbip, int flags, const char *pattern, struct directory ***dpv)
+{
+    size_t i;
+    size_t objcount = 0;
+    struct directory *dp;
+
+    RT_CK_DBI(dbip);
+    db_update_nref(dbip, &rt_uniresource);
+    for (i = 0; i < RT_DBNHASH; i++) {
+        for (dp = dbip->dbi_Head[i]; dp != RT_DIR_NULL; dp = dp->d_forw) {
+		if (dp->d_nref == 0){
+		printf ("Yo found the TLO %s\n", dp->d_namep);
+            objcount += dp_eval_flags(dp, flags);}
+        }
+    }
+    if (objcount > 0) {
+        (*dpv) = (struct directory **)bu_malloc(sizeof(struct directory *) * (objcount + 1), "directory pointer array");
+        objcount = 0;
+        for (i = 0; i < RT_DBNHASH; i++) {
+            for (dp = dbip->dbi_Head[i]; dp != RT_DIR_NULL; dp = dp->d_forw) {
+                if (dp_eval_flags(dp,flags)) {
+                    if (!pattern || !bu_fnmatch(pattern, dp->d_namep, 0) ) {
+                        if (dp->d_nref == 0){
+			printf ("Yo found the TLO in 2nd %s\n", dp->d_namep);
+			(*dpv)[objcount] = dp;
+                        objcount++;
+			}
+                    }
+                }
+            }
+        }
+        (*dpv)[objcount] = NULL;
+    }
+    return objcount;
+}
+
+
+*/
 
 
 size_t read_binary (char* g_file, unsigned char **buffer){
@@ -41,44 +84,8 @@ size_t read_binary (char* g_file, unsigned char **buffer){
 }
 
 
-size_t
-db_ls_test(const struct db_i *dbip, int flags, const char *pattern, struct directory ***dpv)
-{
-    size_t i;
-    size_t objcount = 0;
-    struct directory *dp;
-    char *obj;
-    RT_CK_DBI(dbip);
-    for (i = 0; i < RT_DBNHASH; i++) {
-        for (dp = dbip->dbi_Head[i]; dp != RT_DIR_NULL; dp = dp->d_forw) {
-            objcount += dp_eval_flags(dp, flags);
-	    obj = dp->d_namep;
-           // printf ("dp name is %s\n", obj);
-        }
-    }
-    if (objcount > 0) {
-        (*dpv) = (struct directory **)bu_malloc(sizeof(struct directory *) * (objcount + 1), "directory pointer array");
-        objcount = 0;
-        for (i = 0; i < RT_DBNHASH; i++) {
-            for (dp = dbip->dbi_Head[i]; dp != RT_DIR_NULL; dp = dp->d_forw) {
-                if (dp_eval_flags(dp,flags)) {
-                    if (!pattern || !bu_fnmatch(pattern, dp->d_namep, 0)) {
-                        (*dpv)[objcount] = dp;
-                        objcount++;
-			printf ("Object name is %s\n", dp->d_namep);
-                    }
-                }
-            }
-        }
-        (*dpv)[objcount] = NULL;
-    }
-    return objcount;
-}
-
-
-
-                                                                                                   
 int main (int argc, char* argv[]){
+
     struct db_i *dbip;   
     int i,j, g_file;
     size_t size;
@@ -87,8 +94,8 @@ int main (int argc, char* argv[]){
     size = read_binary(argv[0], &buffer);
     char template[] = "fileXXXXXX";
     int counter = 0;
-    struct db_tree_state state = rt_initial_tree_state;  
-    const char* array[] = {"box.r"};
+    struct db_tree_state state = rt_initial_tree_state;
+//    const char* array[] = {"tank"};
     if (size == 1 ){
 	bu_exit(1, "Unable to load g file\n");
     }
@@ -128,39 +135,58 @@ int main (int argc, char* argv[]){
       bu_exit(1, "Unable to load %s\n", argv[0]);
     }
 
-  if (db_lookup(dbip, *array, 1) == NULL) {
+/*  if (db_lookup(dbip, *array, 1) == NULL) {
     db_close(dbip);
     bu_exit(1, "Unable to find %s\n", *array);
   }
-
+*/
 
     // Print struct dbip: http://brlcad.org/docs/doxygen-r64112/d2/d66/structdb__i.xhtml
 
     bu_log ("Database Title Is: %s\n", dbip->dbi_title);
 
 /*  Get list of top level objects     */
-    int obj_cnt=0;
-    struct directory **all_paths;
-    obj_cnt = db_ls_test(dbip, DB_LS_TOPS, NULL, &all_paths);
-    printf ("obj count is %d\n", obj_cnt);
+int obj_cnt = 0;
+struct directory *dp;
+    db_update_nref(dbip, &rt_uniresource);
+
+    if (db_version(dbip) < 5) {
+        for (i = 0; i < RT_DBNHASH; i++)
+            for (dp = dbip->dbi_Head[i]; dp != RT_DIR_NULL; dp = dp->d_forw) {
+                if (dp->d_nref == 0 && !(dp->d_flags & RT_DIR_HIDDEN))
+		    printf ("Found the TLO %s\n", dp->d_namep);
+                    obj_cnt++;
+            }
+    } 
+
+    else {
+        for (i = 0; i < RT_DBNHASH; i++)
+            for (dp = dbip->dbi_Head[i]; dp != RT_DIR_NULL; dp = dp->d_forw) {
+
+                if (dp->d_nref == 0 && !(dp->d_flags & RT_DIR_HIDDEN)) {
+                     obj_cnt++;
+			printf ("Found the TLO in else %s\n", dp->d_namep);
+                }
+
+                else {
+			continue;
+                }
+            }
+    }
+    printf ("TOP LEVEL OBJECTS %d\n", obj_cnt);
 
 
 
-
-
-
-
-/* Call db_walk_tree on each of the objects*/
+/* Call db_walk_tree on each of the objects
   
   state.ts_dbip = dbip;
   state.ts_resp = &rt_uniresource;
   rt_init_resource(&rt_uniresource, 0, NULL );
 
-
   db_walk_tree(dbip, 1, (const char **)array, 1, &state, incr_region, NULL, NULL, &counter);
 
   bu_log("counter is %d\n", counter);
-
+*/
     db_close(dbip);
     free(g_bytes);
     unlink(template);
