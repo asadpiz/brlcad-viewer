@@ -3,14 +3,13 @@
 #include <raytrace.h>
 #include <unistd.h>
 #include <string.h>
-/*
+
 int incr_region(struct db_tree_state *tsp, struct db_full_path *pathp, const struct rt_comb_internal *combp, void *data){
   int *counter = (int*)data;
   (*counter)++;
   return 0;
 }
 
-*/
 
 size_t read_binary (char* g_file, unsigned char **buffer){
 
@@ -54,7 +53,6 @@ int main (int argc, char* argv[]){
     char template[] = "fileXXXXXX";
     int counter = 0;
     struct db_tree_state state = rt_initial_tree_state;
-//    const char* array[] = {"tank"};
     if (size == 1 ){
 	bu_exit(1, "Unable to load g file\n");
     }
@@ -104,27 +102,37 @@ int main (int argc, char* argv[]){
 
     bu_log ("Database Title Is: %s\n", dbip->dbi_title);
 
+
 /*  Get list of top level objects     */
   db_update_nref(dbip, &rt_uniresource);
   int count = db_ls(dbip, DB_LS_TOPS, NULL, &tops);
   bu_log("found %d top level objects\n", count);
-  while (count > 0) {
+/*  while (count > 0) {
+
     bu_log("top path is %s\n", tops[count-1]->d_namep);
     count--;
   }
   if (tops)
     bu_free(tops, "free tops");
+*/
 
-/* Call db_walk_tree on each of the objects
+
+/* Call db_walk_tree on each of the objects */
   
   state.ts_dbip = dbip;
   state.ts_resp = &rt_uniresource;
   rt_init_resource(&rt_uniresource, 0, NULL );
 
-  db_walk_tree(dbip, 1, (const char **)array, 1, &state, incr_region, NULL, NULL, &counter);
+  while (count > 0) {
+    const char* array[] = {tops[count-1]->d_namep};
+    db_walk_tree(dbip, 1, (const char **)array, 1, &state, incr_region, NULL, NULL, &counter);
+    bu_log("top path is %s\n", tops[count-1]->d_namep);
+    bu_log("counter is %d\n", counter);
+    count--;
+  }
+  if (tops)
+    bu_free(tops, "free tops");
 
-  bu_log("counter is %d\n", counter);
-*/
     db_close(dbip);
     free(g_bytes);
     unlink(template);
