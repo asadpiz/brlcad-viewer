@@ -3,8 +3,14 @@
 #include <raytrace.h>
 #include <unistd.h>
 #include <string.h>
+#include <ged.h>
 
-int incr_region(struct db_tree_state *tsp, struct db_full_path *pathp, const struct rt_comb_internal *combp, void *data){
+
+int region_plot (struct db_tree_state *tsp, struct db_full_path *pathp, const struct rt_comb_internal *combp, void *data){
+  
+  struct directory *dp;
+  dp = DB_FULL_PATH_CUR_DIR(pathp);
+  printf ("Region name is %s\n", dp->d_namep);
   int *counter = (int*)data;
   (*counter)++;
   return 0;
@@ -43,7 +49,10 @@ size_t read_binary (char* g_file, unsigned char **buffer){
 
 int main (int argc, char* argv[]){
 
-    struct db_i *dbip;   
+//    struct db_i *dbip;   
+
+    struct ged *gedp = NULL;
+
     struct directory **tops;
     int i,j, g_file;
     size_t size;
@@ -86,13 +95,24 @@ int main (int argc, char* argv[]){
     }
 }
 
-    dbip = db_open(template, "r");
+    gedp = ged_open("db", template, 1);
+    if (!gedp) {
+        bu_exit(8, "ERROR: Unable to open [%s] for reading objects\n", argv[0]);
+    }
+
+
+
+/*  Redundant because we use ged_open now
+ *
+ *  dbip = db_open(template, "r");
     if (db_dirbuild(dbip) < 0) {
       db_close(dbip);
       bu_exit(1, "Unable to load %s\n", argv[0]);
     }
+*/
 
-/*  if (db_lookup(dbip, *array, 1) == NULL) {
+/*  
+ *  if (db_lookup(dbip, *array, 1) == NULL) {
     db_close(dbip);
     bu_exit(1, "Unable to find %s\n", *array);
   }
@@ -100,13 +120,15 @@ int main (int argc, char* argv[]){
 
     // Print struct dbip: http://brlcad.org/docs/doxygen-r64112/d2/d66/structdb__i.xhtml
 
-    bu_log ("Database Title Is: %s\n", dbip->dbi_title);
+    //bu_log ("Database Title Is: %s\n", dbip->dbi_title);
+      bu_log ("Database Title Is: %s\n", gedp->ged_wdbp->dbip->dbi_title);
 
-
-/*  Get list of top level objects     */
-  db_update_nref(dbip, &rt_uniresource);
-  int count = db_ls(dbip, DB_LS_TOPS, NULL, &tops);
+//  Get list of top level objects     
+  db_update_nref(gedp->ged_wdbp->dbip, &rt_uniresource);
+  int count = db_ls(gedp->ged_wdbp->dbip, DB_LS_TOPS, NULL, &tops);
   bu_log("found %d top level objects\n", count);
+
+
 /*  while (count > 0) {
 
     bu_log("top path is %s\n", tops[count-1]->d_namep);
@@ -117,25 +139,25 @@ int main (int argc, char* argv[]){
 */
 
 
-/* Call db_walk_tree on each of the objects */
+// Call db_walk_tree on each of the objects 
   
-  state.ts_dbip = dbip;
+  state.ts_dbip = gedp->ged_wdbp->dbip;
   state.ts_resp = &rt_uniresource;
   rt_init_resource(&rt_uniresource, 0, NULL );
 
   while (count > 0) {
     const char* array[] = {tops[count-1]->d_namep};
-    db_walk_tree(dbip, 1, (const char **)array, 1, &state, incr_region, NULL, NULL, &counter);
+    db_walk_tree(gedp->ged_wdbp->dbip, 1, (const char **)array, 1, &state, region_plot, NULL, NULL, &counter);
     bu_log("top path is %s\n", tops[count-1]->d_namep);
     bu_log("counter is %d\n", counter);
     count--;
   }
   if (tops)
     bu_free(tops, "free tops");
-
-    db_close(dbip);
-    free(g_bytes);
-    unlink(template);
-    return 0;
+  ged_close(gedp);
+  //db_close(dbip);
+  free(g_bytes);
+  unlink(template);
+  return 0;
 }
 

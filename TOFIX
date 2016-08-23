@@ -1,0 +1,6 @@
+sph1.s is also considered as a top level object
+
+found 2 top level objects
+_db_walk_subtree() FAIL on '/sph1.s'
+top path is sph1.s
+
