@@ -6,15 +6,24 @@
 #include <ged.h>
 
 
-int region_plot (struct db_tree_state *tsp, struct db_full_path *pathp, const struct rt_comb_internal *combp, void *data){
-  
+int plot_regions (struct db_tree_state *tsp, struct db_full_path *pathp, const struct rt_comb_internal *combp, struct ged *gedp){
+    point_t rpp_min, rpp_max;
+    point_t obj_min, obj_max;
+
   struct directory *dp;
   dp = DB_FULL_PATH_CUR_DIR(pathp);
-  printf ("Region name is %s\n", dp->d_namep);
-  int *counter = (int*)data;
-  (*counter)++;
+  printf ("WUHUWUHU  Region name is %s\n", dp->d_namep);
+  if (ged_get_obj_bounds(gedp, 1, (const char **)&(dp->d_namep), 0, obj_min, obj_max) == GED_ERROR) {
+            
+printf ("IF IS TRU \n");
+ return GED_ERROR;}
+     VMINMAX(rpp_min, rpp_max, (double *)obj_min);
+     VMINMAX(rpp_min, rpp_max, (double *)obj_max);
+     printf ("HAHAHAHHAHAHA\n");
+     printf ("min {%f %f %f} max {%f %f %f}\n", rpp_min[0], rpp_min[1], rpp_min[2], rpp_max[0], rpp_max[1], rpp_max[2]); 
   return 0;
 }
+
 
 
 size_t read_binary (char* g_file, unsigned char **buffer){
@@ -60,7 +69,6 @@ int main (int argc, char* argv[]){
     unsigned char *g_bytes;
     size = read_binary(argv[0], &buffer);
     char template[] = "fileXXXXXX";
-    int counter = 0;
     struct db_tree_state state = rt_initial_tree_state;
     if (size == 1 ){
 	bu_exit(1, "Unable to load g file\n");
@@ -144,12 +152,11 @@ int main (int argc, char* argv[]){
   state.ts_dbip = gedp->ged_wdbp->dbip;
   state.ts_resp = &rt_uniresource;
   rt_init_resource(&rt_uniresource, 0, NULL );
-
+int k =0;
   while (count > 0) {
     const char* array[] = {tops[count-1]->d_namep};
-    db_walk_tree(gedp->ged_wdbp->dbip, 1, (const char **)array, 1, &state, region_plot, NULL, NULL, &counter);
+    db_walk_tree(gedp->ged_wdbp->dbip, 1, (const char **)array, 1, &state, plot_regions, NULL, NULL, gedp);
     bu_log("top path is %s\n", tops[count-1]->d_namep);
-    bu_log("counter is %d\n", counter);
     count--;
   }
   if (tops)
